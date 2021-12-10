@@ -7,11 +7,10 @@ from PIL import Image
 
 import transformers
 
-from args import get_parser
+
 from dataset.refer import REFER
 
-parser=get_parser()
-args=parser.parse_args()
+
 
 
 class ReferDataset(data.Dataset):
@@ -32,7 +31,7 @@ class ReferDataset(data.Dataset):
 
         ref_ids=self.refer.getRefIds(split=self.split)
         img_ids=self.refer.getImgIds(ref_ids)
-
+        # change dict to list
         all_imgs=self.refer.Imgs
         self.imgs=list(all_imgs[i] for i in img_ids)
         self.ref_ids=ref_ids
