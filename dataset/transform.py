@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 import random
-
+from torchvision.transforms import InterpolationMode
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
@@ -27,7 +27,7 @@ class Compose(object):
         
         return image,target
 
-
+# 随机resize
 class RandomResize(object):
     def __init__(self,min_size,max_size=None):
         self.min_size=min_size
@@ -40,6 +40,17 @@ class RandomResize(object):
         image=F.resize(image,size)
         target=F.resize(target,size,interpolation=Image.NEAREST)
         return image,target
+
+# 固定resize
+
+class Resize(object):
+    def __init__(self,output_size=480) -> None:
+        self.size=output_size
+    def __call__(self, image,target):
+        image=F.resize(image,(self.size,self.size))
+        target=F.resize(target,(self.size,self.size),interpolation=InterpolationMode.NEAREST)
+        return image,target
+        
 
 class RandomHorizontalFlip(object):
     def __init__(self, flip_prob):
@@ -106,20 +117,10 @@ class Normalize(object):
         return image, target
 
 
-def get_transform(train, base_size=520, crop_size=480):
-
-    min_size = int((0.8 if train else 1.0) * base_size)
-    max_size = int((0.8 if train else 1.0) * base_size)
-
+def get_transform():
     transforms = []
-    transforms.append(RandomResize(min_size, max_size))
-
-    if train:
-        transforms.append(RandomCrop(crop_size))
-
-
+    transforms.append(Resize())
     transforms.append(ToTensor())
     transforms.append(Normalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]))
-
     return Compose(transforms)

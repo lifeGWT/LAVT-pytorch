@@ -20,7 +20,14 @@ class ReferDataset(data.Dataset):
                  max_tokens=20, 
                  split='train',
                  eval_mode=False) -> None:
-        
+        """
+        parameters:
+            args: argparse obj
+            image_transforms: transforms apply to image and mask
+            max_tokens: determined the max length of token 
+            split: ['train','val','testA','testB']
+            eval_mode: whether in training or evaluating 
+        """
 
         self.classes=[]
         self.image_transforms=image_transforms
@@ -34,14 +41,16 @@ class ReferDataset(data.Dataset):
         # change dict to list
         all_imgs=self.refer.Imgs
         self.imgs=list(all_imgs[i] for i in img_ids)
+        
         self.ref_ids=ref_ids
-
+        # input_ids -> input sentence 对应的id
+        # attention_masks -> mask掉pad的部分
         self.input_ids=[]
         self.attention_masks=[]
         self.tokenizer=transformers.BertTokenizer.from_pretrained(args.bert_tokenizer)
 
         self.eval_mode=eval_mode
-
+        # pad_id=[0]
         pad_id = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize('[PAD]'))
 
         for r in self.ref_ids:
@@ -55,7 +64,7 @@ class ReferDataset(data.Dataset):
                 sentence_raw=el['raw']
                 attention_mask = [0] * self.max_tokens
                 padded_input_ids = [0] * self.max_tokens
-
+                # `add_special_tokens=True`加入<SOS>和<EOS>
                 input_ids = self.tokenizer.encode(text=sentence_raw, add_special_tokens=True)
 
                 # truncation of tokens
