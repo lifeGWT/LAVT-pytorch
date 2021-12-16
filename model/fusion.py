@@ -2,8 +2,8 @@ from model.LanguagePathway import LanguagePath
 from model.PWAN import PixelWordAttention
 import torch 
 import torch.nn as nn 
-from torch import Tensor
 from torch.nn import functional as F 
+from typing import List
 
 """
 combine PWAM and LanguagePath 
@@ -28,5 +28,15 @@ class FusionModel(nn.Module):
         return self.languagePathway(vis_feat,fusion_feat)
 
 
-def get_list_fusionModel():
-    pass
+def get_list_fusionModel(
+    lan_channel:int,
+    vis_channels:List[int]=[256,512,1024,2048], # original image size 480*480
+    ):
+    fusionList=nn.ModuleList()
+    for vis_channel in vis_channels:
+        fusionList.append(FusionModel(vis_channel,lan_channel))
+    
+    return fusionList
+
+
+

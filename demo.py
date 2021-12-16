@@ -2,6 +2,20 @@ import transformers
 from dataset.ReferDataset import ReferDataset
 from dataset.transform import get_transform
 from args import get_parser
+import config
+from model import Swin
+import torch
+
+cfg=config._C
+model=Swin.build_model(cfg)
+checkpoint=torch.load('checkpoint/swin_base_patch4_window7_224_22k.pth',map_location='cpu')
+model.load_state_dict(checkpoint['model'])
+
+print(model(torch.rand(1,3,224,224)).size())
+
+"""
+Test BERT
+"""
 bertmodel=transformers.BertModel.from_pretrained('bert-base-uncased')
 parse=get_parser()
 args=parse.parse_args()
