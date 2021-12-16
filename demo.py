@@ -3,14 +3,14 @@ from dataset.ReferDataset import ReferDataset
 from dataset.transform import get_transform
 from args import get_parser
 import config
-from model import Swin
+from model.swin_transformer import build_model
 import torch
 
 cfg=config._C
-model=Swin.build_model(cfg)
+model=build_model(cfg)
 checkpoint=torch.load('checkpoint/swin_base_patch4_window7_224_22k.pth',map_location='cpu')
-model.load_state_dict(checkpoint['model'])
-
+model.load_state_dict(checkpoint['model'],strict=False)
+print(model)
 print(model(torch.rand(1,3,224,224)).size())
 
 """

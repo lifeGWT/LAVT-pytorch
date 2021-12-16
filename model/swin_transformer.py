@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+from model.fusion import get_list_fusionModel
 
 
 class Mlp(nn.Module):
@@ -514,7 +515,8 @@ class SwinTransformer(nn.Module):
 
         # stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
-
+        # add fusion part 
+        self.fusions=get_list_fusionModel(lan_channel=768,vis_channels=[256,512,1024,1024])
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -561,10 +563,10 @@ class SwinTransformer(nn.Module):
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
-
+        print(x.size())
         for layer in self.layers:
-            print(x.size())
             x = layer(x)
+            print(x.size())
 
         x = self.norm(x)  # B L C
         x = self.avgpool(x.transpose(1, 2))  # B C 1
@@ -575,6 +577,20 @@ class SwinTransformer(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+    
+    """
+    def forward(self,vis,lan):
+        vis=self.patch_embed(vis)
+        if self.ape:
+            vis=vis+self.absolute_pos_embed
+        vis=self.pos_drop(vis)
+
+        vis=self.layers[0](vis)
+        for i in range(1,len(self.layers)):
+            vis=self.fusions[i-1](vis,lan)
+            vis=self.layers[i](vis)
+    """ 
+            
 
     def flops(self):
         flops = 0
@@ -584,3 +600,29 @@ class SwinTransformer(nn.Module):
         flops += self.num_features * self.patches_resolution[0] * self.patches_resolution[1] // (2 ** self.num_layers)
         flops += self.num_features * self.num_classes
         return flops
+
+
+def build_model(config):
+    model_type = config.MODEL.TYPE
+    if model_type == 'swin':
+        model = SwinTransformer(img_size=config.DATA.IMG_SIZE,
+                                patch_size=config.MODEL.SWIN.PATCH_SIZE,
+                                in_chans=config.MODEL.SWIN.IN_CHANS,
+                                num_classes=config.MODEL.NUM_CLASSES,
+                                embed_dim=config.MODEL.SWIN.EMBED_DIM,
+                                depths=config.MODEL.SWIN.DEPTHS,
+                                num_heads=config.MODEL.SWIN.NUM_HEADS,
+                                window_size=config.MODEL.SWIN.WINDOW_SIZE,
+                                mlp_ratio=config.MODEL.SWIN.MLP_RATIO,
+                                qkv_bias=config.MODEL.SWIN.QKV_BIAS,
+                                qk_scale=config.MODEL.SWIN.QK_SCALE,
+                                drop_rate=config.MODEL.DROP_RATE,
+                                drop_path_rate=config.MODEL.DROP_PATH_RATE,
+                                ape=config.MODEL.SWIN.APE,
+                                patch_norm=config.MODEL.SWIN.PATCH_NORM,
+                                use_checkpoint=config.TRAIN.USE_CHECKPOINT)
+    else:
+        raise NotImplementedError(f"Unkown model: {model_type}")
+
+    return model
+

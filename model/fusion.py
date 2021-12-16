@@ -29,8 +29,8 @@ class FusionModel(nn.Module):
 
 
 def get_list_fusionModel(
-    lan_channel:int,
-    vis_channels:List[int]=[256,512,1024,2048], # original image size 480*480
+    lan_channel:int=768,
+    vis_channels:List[int]=[128,256,512,1024], # original image size 480*480
     ):
     fusionList=nn.ModuleList()
     for vis_channel in vis_channels:
