@@ -1,34 +1,32 @@
+import torch
 import transformers
 from dataset.ReferDataset import ReferDataset
 from dataset.transform import get_transform
 from args import get_parser
 import config
-from model.swin_transformer import build_model
-import torch
+from model.LVAT import LVAT
+import random
+import torch.nn.functional as F
 
-cfg=config._C
-model=build_model(cfg)
-checkpoint=torch.load('checkpoint/swin_base_patch4_window7_224_22k.pth',map_location='cpu')
-model.load_state_dict(checkpoint['model'],strict=False)
-print(model)
-print(model(torch.rand(1,3,224,224)).size())
 
-"""
-Test BERT
-"""
-bertmodel=transformers.BertModel.from_pretrained('bert-base-uncased')
+
+model=LVAT(config)
 parse=get_parser()
 args=parse.parse_args()
 transform=get_transform()
 dataset=ReferDataset(args,split='testB',image_transforms=transform,eval_mode=False)
 print(f"{dataset.split}:{len(dataset)}")
-img,targt,emb,att_mask=dataset[4]
+img,targt,emb,att_mask=dataset[random.randint(0,len(dataset)-1)]
+targt=targt.to(torch.float)
+print(img.size(),targt.size(),emb.size(),att_mask.size())
+img=img.unsqueeze(0)# [1,3,384,384]
 
-print(img.size())
-print(targt.size())
-print(emb)
-print(att_mask)
+pred=model(img,emb,att_mask)
+print(pred.size())
+pred=F.upsample_bilinear(pred,scale_factor=4)
+loss=F.binary_cross_entropy(F.sigmoid(pred.squeeze(1)),targt.unsqueeze(0))
+print(loss)
+loss.backward()
 
-hidden_state=bertmodel(emb,attention_mask=att_mask)[0]
 
-print(hidden_state.size())
+

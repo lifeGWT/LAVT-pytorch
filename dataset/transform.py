@@ -44,7 +44,7 @@ class RandomResize(object):
 # 固定resize
 
 class Resize(object):
-    def __init__(self,output_size=480) -> None:
+    def __init__(self,output_size=384) -> None:
         self.size=output_size
     def __call__(self, image,target):
         image=F.resize(image,(self.size,self.size))

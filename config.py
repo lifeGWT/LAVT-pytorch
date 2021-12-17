@@ -25,7 +25,7 @@ _C.DATA.DATA_PATH = ''
 # Dataset name
 _C.DATA.DATASET = 'imagenet'
 # Input image size
-_C.DATA.IMG_SIZE = 224
+_C.DATA.IMG_SIZE = 384
 # Interpolation to resize image (random, bilinear, bicubic)
 _C.DATA.INTERPOLATION = 'bicubic'
 # Use zipped dataset instead of folder dataset
@@ -45,7 +45,7 @@ _C.MODEL = CN()
 # Model type
 _C.MODEL.TYPE = 'swin'
 # Model name
-_C.MODEL.NAME = 'swin_base_patch4_window7_224'
+_C.MODEL.NAME = 'swin_base_patch4_window12_384'
 # Checkpoint to resume, could be overwritten by command line argument
 _C.MODEL.RESUME = ''
 # Number of classes, overwritten in data preparation
@@ -64,7 +64,7 @@ _C.MODEL.SWIN.IN_CHANS = 3
 _C.MODEL.SWIN.EMBED_DIM = 128
 _C.MODEL.SWIN.DEPTHS = [2, 2, 18, 2]
 _C.MODEL.SWIN.NUM_HEADS = [4,8,16,32]
-_C.MODEL.SWIN.WINDOW_SIZE = 7
+_C.MODEL.SWIN.WINDOW_SIZE = 12
 _C.MODEL.SWIN.MLP_RATIO = 4.
 _C.MODEL.SWIN.QKV_BIAS = True
 _C.MODEL.SWIN.QK_SCALE = None

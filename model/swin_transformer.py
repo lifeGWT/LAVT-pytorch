@@ -5,11 +5,13 @@
 # Written by Ze Liu
 # --------------------------------------------------------
 
+import math
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from model.fusion import get_list_fusionModel
+from model.PWAN import PixelWordAttention
+from model.LanguagePathway import LanguagePath
 
 
 class Mlp(nn.Module):
@@ -42,6 +44,7 @@ def window_partition(x, window_size):
     """
     B, H, W, C = x.shape
     x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
+    
     windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
     return windows
 
@@ -515,8 +518,27 @@ class SwinTransformer(nn.Module):
 
         # stochastic depth
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
-        # add fusion part 
-        self.fusions=get_list_fusionModel(lan_channel=768,vis_channels=[256,512,1024,1024])
+        # add pwan model
+        self.Pwans=nn.ModuleList()
+        vis_channels=[256,512,1024,1024]
+        lan_channel=768
+        for i_layers in range(self.num_layers):
+            self.Pwans.append(
+                PixelWordAttention(
+                    visual_channel=vis_channels[i_layers],
+                    language_channel=lan_channel
+                )
+            )
+        # add Language Pathway 
+        self.LangauagePathway=nn.ModuleList()
+        for i in range(self.num_layers-1):
+            self.LangauagePathway.append(
+                LanguagePath(
+                    C_in=vis_channels[i]
+                )
+            )
+        # we also need to track the fuse features
+        self.fuse_feats=[]
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -563,16 +585,18 @@ class SwinTransformer(nn.Module):
         if self.ape:
             x = x + self.absolute_pos_embed
         x = self.pos_drop(x)
-        print(x.size())
+       
         for layer in self.layers:
             x = layer(x)
             print(x.size())
+        
 
         x = self.norm(x)  # B L C
         x = self.avgpool(x.transpose(1, 2))  # B C 1
         x = torch.flatten(x, 1)
         return x
     # we need to rewrite the model forward
+    """
     def forward(self, x):
         x = self.forward_features(x)
         x = self.head(x)
@@ -580,16 +604,37 @@ class SwinTransformer(nn.Module):
     
     """
     def forward(self,vis,lan):
+        # change lan_feats [N,T,C] to [N,C,T]
+        lan=lan.permute(0,2,1)
+
         vis=self.patch_embed(vis)
         if self.ape:
             vis=vis+self.absolute_pos_embed
         vis=self.pos_drop(vis)
 
-        vis=self.layers[0](vis)
-        for i in range(1,len(self.layers)):
-            vis=self.fusions[i-1](vis,lan)
-            vis=self.layers[i](vis)
-    """ 
+        for i in range(len(self.layers)-1):
+            # vision layer
+            vis=self.layers[i](vis) # [N,HW,C]
+            N,HW,C=vis.size()
+            H=W=int(math.sqrt(HW))
+            vis=vis.view(N,H,W,C).permute(0,3,1,2) # [N,C,H,W]
+            # fuse layer
+            fuse=self.Pwans[i](vis,lan) # [N,C,H,W]
+            self.fuse_feats.insert(0,fuse)
+            # language path
+            vis=self.LangauagePathway[i](fuse,vis) # [N,C,H,W]
+            vis=vis.view(N,C,int(H*W)).permute(0,2,1)
+            
+        
+        vis=self.layers[-1](vis) 
+        N,HW,C=vis.size()
+        H=W=int(math.sqrt(HW))
+        vis=vis.view(N,H,W,C).permute(0,3,1,2)
+        fuse=self.Pwans[-1](vis,lan)
+        self.fuse_feats.insert(0,fuse)
+
+        return self.fuse_feats
+
             
 
     def flops(self):

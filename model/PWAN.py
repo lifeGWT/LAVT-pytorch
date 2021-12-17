@@ -36,7 +36,7 @@ class PixelWordAttention(nn.Module):
     def forward(self,vis_feat:Tensor,lan_feat:Tensor):
         """
         Input:
-            vis_feat:
+            vis_feat: 
                 Visual Features from each stage [N,Ci,H,W]
             lan_feat:
                 Language features from BERT Encoder [N,Ct,T]
