@@ -520,7 +520,7 @@ class SwinTransformer(nn.Module):
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
         # add pwan model
         self.Pwans=nn.ModuleList()
-        vis_channels=[256,512,1024,1024]
+        vis_channels=[192,384,768,768]
         lan_channel=768
         for i_layers in range(self.num_layers):
             self.Pwans.append(
@@ -537,8 +537,7 @@ class SwinTransformer(nn.Module):
                     C_in=vis_channels[i]
                 )
             )
-        # we also need to track the fuse features
-        self.fuse_feats=[]
+        
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
@@ -604,6 +603,8 @@ class SwinTransformer(nn.Module):
     
     """
     def forward(self,vis,lan):
+        # we also need to track the fuse features
+        fuse_feats=[]
         # change lan_feats [N,T,C] to [N,C,T]
         lan=lan.permute(0,2,1)
 
@@ -620,7 +621,7 @@ class SwinTransformer(nn.Module):
             vis=vis.view(N,H,W,C).permute(0,3,1,2) # [N,C,H,W]
             # fuse layer
             fuse=self.Pwans[i](vis,lan) # [N,C,H,W]
-            self.fuse_feats.insert(0,fuse)
+            fuse_feats.insert(0,fuse)
             # language path
             vis=self.LangauagePathway[i](fuse,vis) # [N,C,H,W]
             vis=vis.view(N,C,int(H*W)).permute(0,2,1)
@@ -631,9 +632,9 @@ class SwinTransformer(nn.Module):
         H=W=int(math.sqrt(HW))
         vis=vis.view(N,H,W,C).permute(0,3,1,2)
         fuse=self.Pwans[-1](vis,lan)
-        self.fuse_feats.insert(0,fuse)
+        fuse_feats.insert(0,fuse)
 
-        return self.fuse_feats
+        return fuse_feats
 
             
 

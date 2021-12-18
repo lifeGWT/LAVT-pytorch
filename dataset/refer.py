@@ -47,7 +47,7 @@ class REFER:
 		# provide data_root folder which contains refclef, refcoco, refcoco+ and refcocog
 		# also provide dataset name and splitBy information
 		# e.g., dataset = 'refcoco', splitBy = 'unc'
-		print ('loading dataset %s into memory...' % dataset)
+		# print ('loading dataset %s into memory...' % dataset)
 		self.ROOT_DIR = osp.abspath(osp.dirname(__file__))
 		self.DATA_DIR = osp.join(data_root, dataset)
 		if dataset in ['refcoco', 'refcoco+', 'refcocog']:
@@ -74,7 +74,7 @@ class REFER:
 
 		# create index
 		self.createIndex()
-		print ('DONE (t=%.2fs)' % (time.time()-tic))
+		# print ('DONE (t=%.2fs)' % (time.time()-tic))
 
 	def createIndex(self):
 		# create sets of mapping
@@ -90,7 +90,7 @@ class REFER:
 		# 10) catToRefs: 	{category_id: refs}
 		# 11) sentToRef: 	{sent_id: ref}
 		# 12) sentToTokens: {sent_id: tokens}
-		print ('creating index...')
+		# print ('creating index...')
 		# fetch info from instances
 		Anns, Imgs, Cats, imgToAnns = {}, {}, {}, {}
 		for ann in self.data['annotations']:
@@ -137,7 +137,7 @@ class REFER:
 		self.catToRefs = catToRefs
 		self.sentToRef = sentToRef
 		self.sentToTokens = sentToTokens
-		print ('index created.')
+		# print ('index created.')
 
 	def getRefIds(self, image_ids=[], cat_ids=[], ref_ids=[], split=''):
 		image_ids = image_ids if type(image_ids) == list else [image_ids]

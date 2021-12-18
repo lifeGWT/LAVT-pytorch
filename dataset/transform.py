@@ -117,9 +117,9 @@ class Normalize(object):
         return image, target
 
 
-def get_transform():
+def get_transform(args):
     transforms = []
-    transforms.append(Resize())
+    transforms.append(Resize(args.size))
     transforms.append(ToTensor())
     transforms.append(Normalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]))

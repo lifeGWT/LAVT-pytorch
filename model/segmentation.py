@@ -17,7 +17,7 @@ class TinyConv(nn.Module):
 class Segmentation(nn.Module):
     def __init__(
         self,
-        channel_list:List[int]=[2048,2560,2816],
+        channel_list:List[int]=[768+768,768+768+384,768+768+384+192], # [2048,2560,2816]
     ):
         super().__init__()
         # build tiny conv nets
@@ -27,7 +27,7 @@ class Segmentation(nn.Module):
                 TinyConv(channel)
             )
         # last projection map
-        self.conv=nn.Conv2d(channel_list[-1],1,1)
+        self.conv=nn.Conv2d(channel_list[-1],2,1)
     
     def forward(self,fuse_tensors:List[Tensor]):
         out=fuse_tensors[0]

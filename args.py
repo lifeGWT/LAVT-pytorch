@@ -1,9 +1,5 @@
-import argparse 
+import argparse
 
-
-
-def main(args):
-    pass
 
 
 def get_parser():
@@ -21,8 +17,22 @@ def get_parser():
     parser.add_argument('--splitBy', default='unc', help='split By')
     parser.add_argument('--spilt',default='test',help='split to run test')
 
+    # optimizer set
+    parser.add_argument("--lr",default=5e-5,type=float,help="initial learning rate")
+    parser.add_argument("--weight-decay",default=0.01,type=float,help="weight-decay")
+    # polynomial learning rate set
+    parser.add_argument("--end_lr",default=1e-5,type=float,help="end_learning_rate")
+    parser.add_argument("--power",default=1.0,type=float,help="power of polynomial learning rate")
+    # training set
+    parser.add_argument("--batch_size",default=1,type=int,help="batch size per GPU")
+    parser.add_argument("--epoch",default=40,type=int,help="training epoch")
+    parser.add_argument("--print-freq",default=100,type=int,help="the frequent of print")
+    parser.add_argument("--size",default=224,type=int,help="the size of image")
+    # Only evaluate
+    parser.add_argument("--eval", action="store_true", help="Only run evaluation")
+
     # Distributed training parameters
     parser.add_argument("--world-size", default=2, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")
-
+    parser.add_argument("--local_rank",default=-1,help="local rank") 
     return parser
