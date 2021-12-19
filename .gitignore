@@ -1,5 +1,9 @@
 *.pyc
-data/*
+data/images/*
+data/refcoco/*
+data/refcoco+/*
+data/refcocog/*
+data/refclef/*
 *.ipynb
 *.pth
 *.txt
