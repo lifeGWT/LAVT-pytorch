@@ -27,10 +27,13 @@ def get_parser():
     parser.add_argument("--batch_size",default=1,type=int,help="batch size per GPU")
     parser.add_argument("--epoch",default=40,type=int,help="training epoch")
     parser.add_argument("--print-freq",default=100,type=int,help="the frequent of print")
-    parser.add_argument("--size",default=224,type=int,help="the size of image")
+    parser.add_argument("--size",default=384,type=int,help="the size of image")
     # Only evaluate
+    parser.add_argument("--pretrain",default="ckpt_epoch_5.pth")
     parser.add_argument("--eval", action="store_true", help="Only run evaluation")
-
+    parser.add_argument("--type",default='train',type=str,help="[train,val,testA,testB]")
+    # Save check point
+    parser.add_argument("--output",default="./checkpoint",type=str,help="output dir for checkpoint")
     # Distributed training parameters
     parser.add_argument("--world-size", default=2, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", help="url used to set up distributed training")

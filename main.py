@@ -1,11 +1,11 @@
+from math import modf
 import torch 
 import os
 import torch.nn.functional as F
 from torch import Tensor
-from torch.utils import data
 from model.LVAT import LVAT,criterion
 import torch.distributed as dist
-from torch.optim import AdamW
+from torch.optim import AdamW, lr_scheduler
 from dataset.ReferDataset import ReferDataset
 from dataset.transform import get_transform
 from args import get_parser
@@ -15,7 +15,7 @@ import random
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader, sampler
 from utils.poly_lr_decay import PolynomialLRDecay
-from utils.util import AverageMeter,reduce_tensor
+from utils.util import AverageMeter, load_checkpoint_for_eval,reduce_tensor, save_checkpoint
 import time 
 from logger import create_logger
 import datetime
@@ -53,14 +53,25 @@ def main(args):
                                 power=args.power)
     
     if args.eval:
+        load_checkpoint_for_eval(model_without_ddp,logger)
+        validate(args,train_loader,model)
         return
     
+    logger.info("Start training")
+    start_time = time.time()
     for epoch in range(args.epoch):
-        train_sampler.set_epoch(epoch)
-
-        scheduler.step()
-
+        train_loader.sampler.set_epoch(epoch)
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
+        scheduler.step()
+        
+        if epoch in [5,10,20,30,40] and dist.get_rank()==0:
+            save_checkpoint(epoch,model_without_ddp,optimizer,scheduler,logger,args)
+
+            
+    
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    logger.info('Training time {}'.format(total_time_str))
 
 
 
@@ -90,15 +101,14 @@ def train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args):
 
         # Synchronizes all processes.
         # all process statistic
-        dist.barrier()
-        reduced_loss=reduce_tensor(loss)
-        loss_meter.update(reduced_loss.item(),img.size(0))
-
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        torch.cuda.synchronize()
+
         # measure time
+        loss_meter.update(loss.item(), target.size(0))
         batch_time.update(time.time()-end)
         end=time.time()
 
@@ -117,32 +127,64 @@ def train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args):
     logger.info(f"EPOCH {epoch} training takes {datetime.timedelta(seconds=int(epoch_time))}")
 
 
+@torch.no_grad()
+def validate(args,data_loader,model):
+    local_rank=args.local_rank
+    model.eval()
+
+    batch_time=AverageMeter()
+    mIOU_meter=AverageMeter()
+    I_meter=AverageMeter()
+    U_meter=AverageMeter()
+
+    end=time.time()
+
+    for idx,(img,target,emb,att_mask) in enumerate(data_loader):
+        batch_size=img.size(0)
+        emb=emb.squeeze(1)
+        att_mask=att_mask.squeeze(1)
+
+        img=img.cuda(local_rank,non_blocking=True)
+        target=target.cuda(local_rank,non_blocking=True)
+        emb=emb.cuda(local_rank,non_blocking=True)
+        att_mask=att_mask.cuda(local_rank,non_blocking=True)
+        # compute output
+        
+        output=model(img,emb,att_mask)
+        # compute I(over N batch) and U(over N batch) 
+        pred=output.argmax(1)
+        I=torch.sum(torch.mul(pred,target))
+        U=torch.sum(torch.add(pred,target))-I
+        IoU=I*1.0/U # [overall IOU of batch]
+
+        I=reduce_tensor(I)
+        U=reduce_tensor(U)
+        IoU=reduce_tensor(IoU)
+
+        I_meter.update(I)
+        U_meter.update(U)
+        mIOU_meter.update(IoU,batch_size)
+
+
+        batch_time.update(time.time()-end)
+        end=time.time()
+
+        if idx % args.print_freq==0 and local_rank==0:
+            memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
+            logger.info(
+                f'Test: [{idx}/{len(data_loader)}]\t'
+                f'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                f'mIOU {100*mIOU_meter.avg:.3f}\t'
+                f'Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}'
+                f'Mem {memory_used:.0f}MB')
+    logger.info(f'mIOU {100*mIOU_meter.avg:.3f} Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}')
+
+
 
 
     
 
-def compute_IOU(pred:Tensor,gt:Tensor):
-    """
-        Input:[N,2,H,W]
-        target:[N,H,W]
-    """
-    pred=pred.argmax(1)
 
-    intersection=torch.sum(torch.mul(pred,gt))
-    union=torch.sum(torch.add(pred,gt))-intersection
-
-    if intersection == 0 or union == 0:
-        iou = 0
-    else:
-        iou = float(intersection) / float(union)
-
-    return iou
-
-def validate(model,data_loader):
-    model.eval()
-    cum_I, cum_U = 0, 0
-    eval_seg_iou_list = [.5, .6, .7, .8, .9]
-    mean_IoU=[]
 
 
 

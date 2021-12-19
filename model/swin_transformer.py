@@ -520,7 +520,7 @@ class SwinTransformer(nn.Module):
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
         # add pwan model
         self.Pwans=nn.ModuleList()
-        vis_channels=[192,384,768,768]
+        vis_channels=[256,512,1024,1024]
         lan_channel=768
         for i_layers in range(self.num_layers):
             self.Pwans.append(

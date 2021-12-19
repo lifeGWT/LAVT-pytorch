@@ -18,6 +18,7 @@ print(num_params)
 parse=get_parser()
 args=parse.parse_args()
 transform=get_transform(args)
+
 dataset=ReferDataset(args,split='testB',image_transforms=transform,eval_mode=False)
 print(f"{dataset.split}:{len(dataset)}")
 # dataloader
@@ -38,6 +39,7 @@ for d in data:
     print(IoU)
     print("\nBackward PATH")
     loss.backward()
+
 
 
 

@@ -17,7 +17,7 @@ class TinyConv(nn.Module):
 class Segmentation(nn.Module):
     def __init__(
         self,
-        channel_list:List[int]=[768+768,768+768+384,768+768+384+192], # [2048,2560,2816]
+        channel_list:List[int]=[2048,2560,2816]
     ):
         super().__init__()
         # build tiny conv nets
