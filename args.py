@@ -28,8 +28,10 @@ def get_parser():
     parser.add_argument("--epoch",default=40,type=int,help="training epoch")
     parser.add_argument("--print-freq",default=100,type=int,help="the frequent of print")
     parser.add_argument("--size",default=384,type=int,help="the size of image")
+    parser.add_argument("--resume",action="store_true",help="start from a check point")
+    parser.add_argument("--start_epoch",default=0,type=int,help="start epoch")
     # Only evaluate
-    parser.add_argument("--pretrain",default="ckpt_epoch_5.pth")
+    parser.add_argument("--pretrain",default="ckpt_epoch_5.pth",help="name of checkpoint ")
     parser.add_argument("--eval", action="store_true", help="Only run evaluation")
     parser.add_argument("--type",default='train',type=str,help="[train,val,testA,testB]")
     # Save check point

@@ -1,3 +1,4 @@
+from functools import total_ordering
 from math import modf
 import torch 
 import os
@@ -15,7 +16,7 @@ import random
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data import DataLoader, sampler
 from utils.poly_lr_decay import PolynomialLRDecay
-from utils.util import AverageMeter, load_checkpoint_for_eval,reduce_tensor, save_checkpoint
+from utils.util import AverageMeter, load_checkpoint,reduce_tensor, save_checkpoint
 import time 
 from logger import create_logger
 import datetime
@@ -35,7 +36,7 @@ def main(args):
     logger.info(f"number of params: {num_params}")
     # build dataset
     train_dataset=ReferDataset(args,
-                               split='train',
+                               split=args.type,
                                image_transforms=get_transform(args),
                                eval_mode=False)
     train_sampler=DistributedSampler(train_dataset)
@@ -52,10 +53,11 @@ def main(args):
                                 end_learning_rate=args.end_lr,
                                 power=args.power)
     
-    if args.eval:
-        load_checkpoint_for_eval(model_without_ddp,logger)
-        validate(args,train_loader,model)
-        return
+    if args.resume:
+        load_checkpoint(args,model_without_ddp,optimizer,scheduler,logger)
+        if args.eval:
+            validate(args,train_loader,model,local_rank)
+            return
     
     logger.info("Start training")
     start_time = time.time()
@@ -128,8 +130,7 @@ def train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args):
 
 
 @torch.no_grad()
-def validate(args,data_loader,model):
-    local_rank=args.local_rank
+def validate(args,data_loader,model,local_rank):
     model.eval()
 
     batch_time=AverageMeter()
@@ -153,10 +154,11 @@ def validate(args,data_loader,model):
         output=model(img,emb,att_mask)
         # compute I(over N batch) and U(over N batch) 
         pred=output.argmax(1)
-        I=torch.sum(torch.mul(pred,target))
-        U=torch.sum(torch.add(pred,target))-I
+        I=torch.sum(torch.mul(pred,target))*1.0
+        U=torch.sum(torch.add(pred,target))*1.0-I
         IoU=I*1.0/U # [overall IOU of batch]
 
+        torch.cuda.synchronize()
         I=reduce_tensor(I)
         U=reduce_tensor(U)
         IoU=reduce_tensor(IoU)
@@ -169,7 +171,7 @@ def validate(args,data_loader,model):
         batch_time.update(time.time()-end)
         end=time.time()
 
-        if idx % args.print_freq==0 and local_rank==0:
+        if idx % args.print_freq==0:
             memory_used = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
             logger.info(
                 f'Test: [{idx}/{len(data_loader)}]\t'
@@ -178,20 +180,6 @@ def validate(args,data_loader,model):
                 f'Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}'
                 f'Mem {memory_used:.0f}MB')
     logger.info(f'mIOU {100*mIOU_meter.avg:.3f} Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}')
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
 
 
 if __name__=="__main__":
@@ -207,7 +195,7 @@ if __name__=="__main__":
     torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
     torch.distributed.barrier()
     # 只在 rank 0 显示
-    logger = create_logger(output_dir=config._C.OUTPUT, dist_rank=dist.get_rank(), name=f"{config._C.MODEL.NAME}")
+    logger = create_logger(output_dir=config.get_config().OUTPUT, dist_rank=dist.get_rank(), name=f"{config._C.MODEL.NAME}")
     main(args)
 
     

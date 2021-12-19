@@ -45,9 +45,19 @@ def save_checkpoint(epoch,model,optimizer,lr_schdeduler,logger,args):
     torch.save(save_state, save_path)
     logger.info(f"{save_path} saved !!!")
 
-def load_checkpoint_for_eval(args,model,logger):
+# return start epoch
+def load_checkpoint(args,model_without_ddp,optimizer,lr_scheduler,logger):
     root_path=args.output
     pretrain_name=args.pretrain
     checkpoint=torch.load(os.path.join(root_path,pretrain_name),map_location='cpu')
-    msg = model.load_state_dict(checkpoint['model'], strict=False)
+    msg=model_without_ddp.load_state_dict(checkpoint['model'],strict=False)
     logger.info(msg)
+    # resume not evaluation
+    if not args.eval and 'optimizer' in checkpoint and 'lr_scheduler' in checkpoint and 'epoch' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        args.start_epoch=checkpoint['epoch']+1
+    logger.info(f"=> loaded successfully '{pretrain_name}' (epoch {checkpoint['epoch']})")
+    del checkpoint
+    torch.cuda.empty_cache()
+
