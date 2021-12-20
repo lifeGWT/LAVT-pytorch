@@ -116,7 +116,7 @@ class Normalize(object):
         image = F.normalize(image, mean=self.mean, std=self.std)
         return image, target
 
-
+# We don't apply other complex data argumentation
 def get_transform(args):
     transforms = []
     transforms.append(Resize(args.size))

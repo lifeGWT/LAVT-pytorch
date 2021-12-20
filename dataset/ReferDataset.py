@@ -56,7 +56,7 @@ class ReferDataset(data.Dataset):
         for r in self.ref_ids:
             # for each image
             ref=self.refer.Refs[r]
-
+            # List[Tensor] Tensor shape [1,len]
             sentences_for_ref=[]
             attentions_for_ref=[]
             # for each sentence
@@ -75,7 +75,7 @@ class ReferDataset(data.Dataset):
 
                 sentences_for_ref.append(torch.tensor(padded_input_ids).unsqueeze(0))
                 attentions_for_ref.append(torch.tensor(attention_mask).unsqueeze(0))
-
+            # List[List[Tensor]]
             self.input_ids.append(sentences_for_ref)
             self.attention_masks.append(attentions_for_ref)
 
@@ -108,7 +108,9 @@ class ReferDataset(data.Dataset):
             target=annot
         
         if self.eval_mode:
-
+            """
+            torch.Size([3, 384, 384]) torch.Size([384, 384]) torch.Size([1, 20, 3]) torch.Size([1, 20, 3])
+            """
             embedding=[]
             att=[]
 
@@ -123,6 +125,9 @@ class ReferDataset(data.Dataset):
             attention_mask = torch.cat(att, dim=-1)
         
         else: # for training random select one sentence
+            """
+            torch.Size([3, 384, 384]) torch.Size([384, 384]) torch.Size([1, 20]) torch.Size([1, 20])
+            """
             choice_sent=np.random.choice(len(self.input_ids[index]))
             tensor_embeddings = self.input_ids[index][choice_sent]
             attention_mask = self.attention_masks[index][choice_sent]

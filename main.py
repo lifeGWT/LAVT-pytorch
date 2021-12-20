@@ -61,7 +61,7 @@ def main(args):
     
     logger.info("Start training")
     start_time = time.time()
-    for epoch in range(args.epoch):
+    for epoch in range(args.start_epoch,args.epoch):
         train_loader.sampler.set_epoch(epoch)
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
         scheduler.step()
@@ -145,13 +145,28 @@ def validate(args,data_loader,model,local_rank):
         emb=emb.squeeze(1)
         att_mask=att_mask.squeeze(1)
 
-        img=img.cuda(local_rank,non_blocking=True)
-        target=target.cuda(local_rank,non_blocking=True)
-        emb=emb.cuda(local_rank,non_blocking=True)
-        att_mask=att_mask.cuda(local_rank,non_blocking=True)
-        # compute output
+        img=img.cuda(local_rank,non_blocking=True) # [B,3,H,W]
+        target=target.cuda(local_rank,non_blocking=True) #[B,H,W]
+        emb=emb.cuda(local_rank,non_blocking=True) # [B,len] or [B,len,num]
+        att_mask=att_mask.cuda(local_rank,non_blocking=True) # [B,len] or [B,len,num]
+        # compute output for different mode
+        if args.eval_mode=='cat':
+            emb=emb.view(batch_size,-1)
+            att_mask=att_mask.view(batch_size,-1)
+            output=model(img,emb,att_mask)
         
-        output=model(img,emb,att_mask)
+        if args.eval_mode=='avg':
+            _,_,num_of_sent=emb.size()
+            outputs=[]
+            for s in range(num_of_sent):
+                emb_s,att_mask_s=emb[:,:,s],att_mask[:,:,s]
+                outputs.append(model(img,emb_s,att_mask_s))
+            
+            outputs=torch.stack(outputs,dim=1)
+            output=outputs.mean(dim=-1)
+
+
+        
         # compute I(over N batch) and U(over N batch) 
         pred=output.argmax(1)
         I=torch.sum(torch.mul(pred,target))*1.0
