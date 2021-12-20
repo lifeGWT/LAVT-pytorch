@@ -165,6 +165,10 @@ class WindowAttention(nn.Module):
 
 
 class SwinTransformerBlock(nn.Module):
+    """
+    A Swin Transformer block consists of a shifted window based MSA,
+    followed by 2-layer MLP with GELU non-linearity in between
+    """
     r""" Swin Transformer Block.
 
     Args:
@@ -318,7 +322,7 @@ class PatchMerging(nn.Module):
         assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
 
         x = x.view(B, H, W, C)
-
+        # Patch merge operation
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
         x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
@@ -327,7 +331,7 @@ class PatchMerging(nn.Module):
         x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
 
         x = self.norm(x)
-        x = self.reduction(x)
+        x = self.reduction(x) # B H/2*W/2 4*C => B H/2*W/2 2*C
 
         return x
 
