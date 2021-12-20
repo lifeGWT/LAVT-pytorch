@@ -1,3 +1,6 @@
+"""
+This is a demo to check the correctness of the model
+"""
 import torch
 import transformers
 from dataset.ReferDataset import ReferDataset
@@ -8,9 +11,8 @@ from model.LVAT import LVAT,criterion
 import random
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from main import compute_IOU
 
-
+torch.cuda.set_device(4)
 model=LVAT(config)
 model.cuda()
 num_params=sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -22,7 +24,7 @@ transform=get_transform(args)
 dataset=ReferDataset(args,split='testB',image_transforms=transform,eval_mode=False)
 print(f"{dataset.split}:{len(dataset)}")
 # dataloader
-data=DataLoader(dataset,batch_size=2)
+data=DataLoader(dataset,batch_size=1)
 for d in data:
     model.zero_grad()
     img,targt,emb,att_mask=d
@@ -35,8 +37,6 @@ for d in data:
     print(pred.size())
     loss=criterion(pred,targt)
     print(loss)
-    IoU=compute_IOU(pred,targt)
-    print(IoU)
     print("\nBackward PATH")
     loss.backward()
 

@@ -9,7 +9,7 @@ class LVAT(nn.Module):
     def __init__(self,config):
         super().__init__()
         # swin config
-        self.cfg=config._C
+        self.cfg=config.get_config()
         # text encoder
         self.textEncoder=transformers.BertModel.from_pretrained('bert-base-uncased')
         # swin_transfomer

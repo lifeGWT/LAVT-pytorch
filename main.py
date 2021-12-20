@@ -177,7 +177,7 @@ def validate(args,data_loader,model,local_rank):
                 f'Test: [{idx}/{len(data_loader)}]\t'
                 f'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                 f'mIOU {100*mIOU_meter.avg:.3f}\t'
-                f'Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}'
+                f'Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}\t'
                 f'Mem {memory_used:.0f}MB')
     logger.info(f'mIOU {100*mIOU_meter.avg:.3f} Overall IOU {100*float(I_meter.sum)/float(U_meter.sum):.3f}')
 

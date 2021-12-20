@@ -4,7 +4,6 @@ data/refcoco/*
 data/refcoco+/*
 data/refcocog/*
 data/refclef/*
-*.ipynb
 *.pth
 *.txt
 *.zip
