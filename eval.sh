@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=4,5 python -m torch.distributed.launch --nproc_per_node 2 --master_port 23458 main.py --batch_size 1 --resume --eval --type testA --eval_mode cat
+CUDA_VISIBLE_DEVICES=4,5 python -m torch.distributed.launch --nproc_per_node 2 --master_port 23458 main.py --batch_size 1 --resume --eval --type val --eval_mode avg

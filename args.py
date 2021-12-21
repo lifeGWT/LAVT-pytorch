@@ -31,7 +31,7 @@ def get_parser():
     parser.add_argument("--resume",action="store_true",help="start from a check point")
     parser.add_argument("--start_epoch",default=0,type=int,help="start epoch")
     # Only evaluate
-    parser.add_argument("--pretrain",default="ckpt_epoch_10.pth",type=str,help="name of checkpoint ")
+    parser.add_argument("--pretrain",default="ckpt_epoch_20.pth",type=str,help="name of checkpoint ")
     parser.add_argument("--eval", action="store_true", help="Only run evaluation")
     parser.add_argument("--type",default='train',type=str,help="[train,val,testA,testB]")
     # we provide two evaluate mode to better use all sentence to make predict

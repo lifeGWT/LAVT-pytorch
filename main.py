@@ -38,7 +38,7 @@ def main(args):
     train_dataset=ReferDataset(args,
                                split=args.type,
                                image_transforms=get_transform(args),
-                               eval_mode=False)
+                               eval_mode=args.eval)
     train_sampler=DistributedSampler(train_dataset)
     train_loader=DataLoader(train_dataset,
                             batch_size=args.batch_size,
@@ -66,7 +66,7 @@ def main(args):
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
         scheduler.step()
         
-        if epoch in [5,10,20,30,40] and dist.get_rank()==0:
+        if epoch in [5,10,20,30,40-1] and dist.get_rank()==0:
             save_checkpoint(epoch,model_without_ddp,optimizer,scheduler,logger,args)
 
             
@@ -162,7 +162,7 @@ def validate(args,data_loader,model,local_rank):
                 emb_s,att_mask_s=emb[:,:,s],att_mask[:,:,s]
                 outputs.append(model(img,emb_s,att_mask_s))
             
-            outputs=torch.stack(outputs,dim=1)
+            outputs=torch.stack(outputs,dim=-1)
             output=outputs.mean(dim=-1)
 
 
