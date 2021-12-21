@@ -66,7 +66,7 @@ def main(args):
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
         scheduler.step()
         
-        if epoch in [5,10,20,30,40-1] and dist.get_rank()==0:
+        if epoch in [5,10,15,20,25,30,35,40-1] and dist.get_rank()==0:
             save_checkpoint(epoch,model_without_ddp,optimizer,scheduler,logger,args)
 
             

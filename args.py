@@ -20,7 +20,10 @@ def get_parser():
     # optimizer set
     parser.add_argument("--lr",default=5e-5,type=float,help="initial learning rate")
     parser.add_argument("--weight-decay",default=0.01,type=float,help="weight-decay")
-    # polynomial learning rate set
+    # polynomial learning rate set 
+    """
+    need to carefully set # [2.5e-5]
+    """
     parser.add_argument("--end_lr",default=1e-5,type=float,help="end_learning_rate")
     parser.add_argument("--power",default=1.0,type=float,help="power of polynomial learning rate")
     # training set
@@ -31,7 +34,7 @@ def get_parser():
     parser.add_argument("--resume",action="store_true",help="start from a check point")
     parser.add_argument("--start_epoch",default=0,type=int,help="start epoch")
     # Only evaluate
-    parser.add_argument("--pretrain",default="ckpt_epoch_20.pth",type=str,help="name of checkpoint ")
+    parser.add_argument("--pretrain",default="ckpt_epoch_30.pth",type=str,help="name of checkpoint ")
     parser.add_argument("--eval", action="store_true", help="Only run evaluation")
     parser.add_argument("--type",default='train',type=str,help="[train,val,testA,testB]")
     # we provide two evaluate mode to better use all sentence to make predict
