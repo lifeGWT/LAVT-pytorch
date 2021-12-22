@@ -16,7 +16,8 @@ def get_parser():
     parser.add_argument('--refer_dataset', default='refcoco', help='dataset name')
     parser.add_argument('--splitBy', default='unc', help='split By')
     parser.add_argument('--spilt',default='test',help='split to run test')
-
+    # config file
+    parser.add_argument("--cfg_file",default="configs/swin_base_patch4_window7_224.yaml",type=str,help="config file define dataset and model")
     # optimizer set
     parser.add_argument("--lr",default=5e-5,type=float,help="initial learning rate")
     parser.add_argument("--weight-decay",default=0.01,type=float,help="weight-decay")
@@ -26,15 +27,16 @@ def get_parser():
     """
     parser.add_argument("--end_lr",default=1e-5,type=float,help="end_learning_rate")
     parser.add_argument("--power",default=1.0,type=float,help="power of polynomial learning rate")
+    parser.add_argument("--max_decay_steps",default=35,type=int,help="max_decay_steps for polynomial learning ")
     # training set
     parser.add_argument("--batch_size",default=1,type=int,help="batch size per GPU")
-    parser.add_argument("--epoch",default=40,type=int,help="training epoch")
+    parser.add_argument("--epoch",default=50,type=int,help="training epoch")
     parser.add_argument("--print-freq",default=100,type=int,help="the frequent of print")
     parser.add_argument("--size",default=384,type=int,help="the size of image")
     parser.add_argument("--resume",action="store_true",help="start from a check point")
     parser.add_argument("--start_epoch",default=0,type=int,help="start epoch")
     # Only evaluate
-    parser.add_argument("--pretrain",default="ckpt_epoch_30.pth",type=str,help="name of checkpoint ")
+    parser.add_argument("--pretrain",default="ckpt_epoch_35.pth",type=str,help="name of checkpoint ")
     parser.add_argument("--eval", action="store_true", help="Only run evaluation")
     parser.add_argument("--type",default='train',type=str,help="[train,val,testA,testB]")
     # we provide two evaluate mode to better use all sentence to make predict

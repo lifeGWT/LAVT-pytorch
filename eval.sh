@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=4,5 python -m torch.distributed.launch --nproc_per_node 2 --master_port 23458 main.py --batch_size 1 --resume --eval --type val --eval_mode avg
+CUDA_VISIBLE_DEVICES=7 python -m torch.distributed.launch --nproc_per_node 1 --master_port 23458 main.py --batch_size 1 --resume --eval --type val --eval_mode cat --pretrain ckpt_epoch_39.pth --cfg_file configs/swin_base_patch4_window12_384.yaml

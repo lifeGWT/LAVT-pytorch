@@ -9,12 +9,12 @@ class LVAT(nn.Module):
     def __init__(self,config):
         super().__init__()
         # swin config
-        self.cfg=config.get_config()
+        self.cfg=config
         # text encoder
         self.textEncoder=transformers.BertModel.from_pretrained('bert-base-uncased')
         # swin_transfomer
         self.imageEncoder=build_model(self.cfg)
-        checkpoint=torch.load('checkpoint/swin_base_patch4_window12_384_22k.pth',map_location='cpu')
+        checkpoint=torch.load(self.cfg.PRETRAIN.PATH,map_location='cpu')
         self.imageEncoder.load_state_dict(checkpoint['model'],strict=False)
         # Segmentation 
         self.Seg=Segmentation()

@@ -24,11 +24,11 @@ import datetime
 Some infos about training LVAT
 polynomial learning rate decay
 """
-def main(args):
+def main(args,cfg):
     local_rank=dist.get_rank()
     
     # build module
-    model=LVAT(config)
+    model=LVAT(cfg)
     model.cuda(local_rank)
     model=torch.nn.parallel.DistributedDataParallel(model,device_ids=[local_rank],find_unused_parameters=True)
     model_without_ddp=model.module
@@ -49,7 +49,7 @@ def main(args):
     # build optimizer and lr scheduler
     optimizer=AdamW(params=model.parameters(),lr=args.lr,weight_decay=args.weight_decay)
     scheduler=PolynomialLRDecay(optimizer,
-                                max_decay_steps=args.epoch,
+                                max_decay_steps=args.max_decay_steps,
                                 end_learning_rate=args.end_lr,
                                 power=args.power)
     
@@ -66,7 +66,7 @@ def main(args):
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
         scheduler.step()
         
-        if epoch in [5,10,15,20,25,30,35,40-1] and dist.get_rank()==0:
+        if epoch in [5,10,15,20,25,30,35,40-1,45,49] and dist.get_rank()==0:
             save_checkpoint(epoch,model_without_ddp,optimizer,scheduler,logger,args)
 
             
@@ -146,9 +146,11 @@ def validate(args,data_loader,model,local_rank):
         att_mask=att_mask.squeeze(1)
 
         img=img.cuda(local_rank,non_blocking=True) # [B,3,H,W]
-        target=target.cuda(local_rank,non_blocking=True) #[B,H,W]
+        target=target.cuda(local_rank,non_blocking=True) #[B,ori_H,ori_W]
         emb=emb.cuda(local_rank,non_blocking=True) # [B,len] or [B,len,num]
         att_mask=att_mask.cuda(local_rank,non_blocking=True) # [B,len] or [B,len,num]
+        
+        _,o_H,o_W=target.size()
         # compute output for different mode
         if args.eval_mode=='cat':
             emb=emb.view(batch_size,-1)
@@ -168,6 +170,7 @@ def validate(args,data_loader,model,local_rank):
 
         
         # compute I(over N batch) and U(over N batch) 
+        output=F.interpolate(output,(o_H,o_W),align_corners=True,mode='bilinear')
         pred=output.argmax(1)
         I=torch.sum(torch.mul(pred,target))*1.0
         U=torch.sum(torch.add(pred,target))*1.0-I
@@ -210,8 +213,9 @@ if __name__=="__main__":
     torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
     torch.distributed.barrier()
     # 只在 rank 0 显示
-    logger = create_logger(output_dir=config.get_config().OUTPUT, dist_rank=dist.get_rank(), name=f"{config._C.MODEL.NAME}")
-    main(args)
+    cfg=config.get_config(args)
+    logger = create_logger(output_dir=cfg.OUTPUT, dist_rank=dist.get_rank(), name=f"{cfg.MODEL.NAME}")
+    main(args,cfg)
 
     
 

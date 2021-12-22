@@ -44,13 +44,17 @@ class RandomResize(object):
 # 固定resize
 
 class Resize(object):
-    def __init__(self,output_size=384) -> None:
+    def __init__(self,output_size=384,train=True) -> None:
         self.size=output_size
+        self.train=train
     def __call__(self, image,target):
         image=F.resize(image,(self.size,self.size))
-        target=F.resize(target,(self.size,self.size),interpolation=InterpolationMode.NEAREST)
+        # we must need to test on the original size 
+        if self.train:
+            target=F.resize(target,(self.size,self.size),interpolation=InterpolationMode.NEAREST)
         return image,target
-        
+
+
 
 class RandomHorizontalFlip(object):
     def __init__(self, flip_prob):
@@ -119,7 +123,7 @@ class Normalize(object):
 # We don't apply other complex data argumentation
 def get_transform(args):
     transforms = []
-    transforms.append(Resize(args.size))
+    transforms.append(Resize(args.size,not args.eval))
     transforms.append(ToTensor())
     transforms.append(Normalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]))
