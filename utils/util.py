@@ -40,7 +40,7 @@ def save_checkpoint(epoch,model,optimizer,lr_schdeduler,logger,args):
         'epoch':epoch
     }
 
-    save_path=os.path.join(args.output,f'ckpt_epoch_{epoch}.pth')
+    save_path=os.path.join(args.output,f'ckpt_448_epoch_{epoch}.pth')
     logger.info(f"{save_path} saving......")
     torch.save(save_state, save_path)
     logger.info(f"{save_path} saved !!!")
