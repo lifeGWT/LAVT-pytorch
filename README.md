@@ -1,5 +1,8 @@
 # LAVT: Language-Aware Vision Transformer for Referring Image Segmentation
 
+## Where we are ?
+![](./image/sota.jpg)
+
 > 对原论文的复现
 >
 > 论文链接: https://arxiv.org/abs/2112.02244
