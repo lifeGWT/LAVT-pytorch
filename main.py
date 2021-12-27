@@ -28,7 +28,7 @@ def main(args,cfg):
     local_rank=dist.get_rank()
     
     # build module
-    model=LVAT(cfg)
+    model=LVAT(cfg,logger)
     model.cuda(local_rank)
     model=torch.nn.parallel.DistributedDataParallel(model,device_ids=[local_rank],find_unused_parameters=True)
     model_without_ddp=model.module
@@ -66,7 +66,7 @@ def main(args,cfg):
         train_one_epoch(train_loader,model,optimizer,epoch,local_rank,args)
         scheduler.step()
         
-        if epoch in [5,10,15,20,25,30,35,40,45,49] and dist.get_rank()==0:
+        if epoch in [1,5,10,15,20,25,30,35,40,45,49] and dist.get_rank()==0:
             save_checkpoint(epoch,model_without_ddp,optimizer,scheduler,logger,args)
 
             
@@ -168,7 +168,7 @@ def validate(args,data_loader,model,local_rank):
             output=outputs.mean(dim=-1)
 
 
-        
+
         # compute I(over N batch) and U(over N batch) 
         output=F.interpolate(output,(o_H,o_W),align_corners=True,mode='bilinear')
         pred=output.argmax(1)

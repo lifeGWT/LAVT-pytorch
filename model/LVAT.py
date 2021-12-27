@@ -5,17 +5,17 @@ import torch.nn as nn
 import transformers
 import torch.nn.functional as F
 from torch import Tensor
+from utils.util import load_pretrained_swin
 class LVAT(nn.Module):
-    def __init__(self,config):
+    def __init__(self,config,logger):
         super().__init__()
         # swin config
-        self.cfg=config
+        self.config=config
         # text encoder
         self.textEncoder=transformers.BertModel.from_pretrained('bert-base-uncased')
         # swin_transfomer
-        self.imageEncoder=build_model(self.cfg)
-        checkpoint=torch.load(self.cfg.PRETRAIN.PATH,map_location='cpu')
-        self.imageEncoder.load_state_dict(checkpoint['model'],strict=False)
+        self.imageEncoder=build_model(self.config)
+        load_pretrained_swin(self.config,self.imageEncoder,logger)
         # Segmentation 
         self.Seg=Segmentation()
     
