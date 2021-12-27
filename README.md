@@ -77,5 +77,5 @@ input sentences
 
 results
 
-![](./image/res.png)
+![](./image/res(1).png)
 
